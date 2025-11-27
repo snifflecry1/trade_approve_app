@@ -6,6 +6,7 @@ class Role(Enum):
     REQUESTER = "Requester"
     APPROVER = "Approver"
 
+
 @dataclass
 class User:
     id: int

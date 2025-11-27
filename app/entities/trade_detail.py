@@ -9,14 +9,17 @@ from typing import Optional, List
 class InstrumentStyle(Enum):
     FORWARD = "Forward Contract"
 
+
 class Currency(Enum):
     EURO = "€"
     POUND = "£"
     DOLLAR = "$"
 
+
 class Direction(Enum):
     BUY = "Buy"
     SELL = "Sell"
+
 
 # strike is None by default until trade is booked
 @dataclass
@@ -37,6 +40,5 @@ class TradeDetail:
     # like some list that is at a specific index pointing to a specific state
     # This seems outside of the specifics of this file representing trade data
 
-    # implement for diff functionality 
+    # implement for diff functionality
     # def compare_trade:
-
