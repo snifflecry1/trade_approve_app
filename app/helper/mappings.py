@@ -28,6 +28,7 @@ action_to_state = {
     Action.BOOK: State.EXECUTED,
     Action.UPDATE: State.NEEDS_REAPPROVAL,
     Action.SENDTOEXECUTE: State.SENT_COUNTERPARTY,
+    Action.CANCEL: State.CANCELLED,
 }
 
 currency_stubs = {

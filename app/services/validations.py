@@ -60,6 +60,9 @@ class Validator:
     
     # deeper validation for submitting trade
     def validate_submit_trade(self, trades: Dict[State,TradeDetail], trade_id:int) -> bool:
+        if len(trades) > 1:
+            logger.error(f"Trade ID {trade_id} has multiple versions; cannot submit.")
+            return False
         if State.DRAFT not in trades:
             logger.error(f"Trade ID {trade_id} is not in DRAFT state.")
             return False
@@ -78,25 +81,67 @@ class Validator:
             return False
         return True
     
-    def validate_approve_trade(self, trades: Dict[State,TradeDetail], trade_id:int, user_id:int, request_id: int) -> Tuple[bool, Optional[str]]:
-        if State.PENDING_APPROVE not in trades and State.NEEDS_REAPPROVAL not in trades:
+    def validate_approve_trade(self, trades: Dict[State,TradeDetail], trade_id:int, user_id:int, request_id: int, state: State) -> bool:
+        if state != State.PENDING_APPROVE and state != State.NEEDS_REAPPROVAL:
             logger.error(f"Trade ID {trade_id} is not in Pending Approval or Needs Reapproval state.")
-            return False, None
-        if State.NEEDS_REAPPROVAL in trades:
-            trade = trades[State.NEEDS_REAPPROVAL]
-        else:
-            trade = trades[State.PENDING_APPROVE]
+            return False
+        if state == State.PENDING_APPROVE and user_id == request_id:
+            logger.error("Approver cannot be the same as the submitter.")
+            return False
+        if state == State.NEEDS_REAPPROVAL and user_id != request_id:
+            logger.error("Re-approver has to be the original requester.")
+            return False
+        trade = trades[state]
         if trade.strike:
             logger.error("Trade Strike price can only be set for executed trades.")
-            return False, None
-        if trade.state_validator == "PENDING_APPROVAL" and user_id == request_id:
-            logger.error("Approver cannot be the same as the submitter.")
-            return False, None
-        if trade.state_validator == "NEEDS_REAPPROVAL" and user_id != request_id:
-            logger.error("Re-approver has to be the original requester.")
-            return False, None
+            return False
         # Return the used state string to correctly log the from_state
-        return True, trade.state_validator
+        return True
+    
+    def validate_cancel_trade(self, trades: Dict[State,TradeDetail], trade_id:int, state: State) -> bool:
+        if state == State.CANCELLED or state == State.EXECUTED or state == State.DRAFT:
+            logger.error(f"Trade ID {trade_id} in invalid state to be cancelled.")
+            return False
+        return True
+    
+    def validate_update_trade(self, trades: Dict[State,TradeDetail], trade_id:int, requester_id:int, user_id:int, updates:dict, state: State) -> bool:
+        if state != State.PENDING_APPROVE:
+            logger.error(f"Trade ID {trade_id} is not in PENDING_APPROVE state and cannot be updated.")
+            return False
+        if requester_id == user_id:
+            logger.error("Updater cannot be the same as the original requester.")
+            return False
+        trade = trades[state]
+        for key, value in updates.items():
+            if hasattr(trade, key):
+                if not isinstance(value, type(getattr(trade, key))):
+                    logger.error(f"Update for '{key}' has incorrect type. Expected {type(getattr(trade, key)).__name__}, got {type(value).__name__}.")
+                    return False
+                if key == "notion_amount" and value <= 1.00:
+                    logger.error("Notional amount must be positive.")
+                    return False
+                if key == "strike":
+                    logger.error("Strike price can only be set for executed trades.")
+                    return False
+                if key == "underlying":
+                    if len(value) != 2 and trade.notion_curr not in value:
+                        logger.error("Underlying must be a list of exactly two currencies and contain notional currency.")
+                        return False
+                if key == "notion_curr":
+                    if value not in trade.underlying:
+                        logger.error("Notional currency must be one of the underlying currencies.")
+                        return False
+                if key in ["t_date", "v_date", "d_date"]:
+                    t_date = updates.get("t_date", trade.t_date)
+                    v_date = updates.get("v_date", trade.v_date)
+                    d_date = updates.get("d_date", trade.d_date)
+                    if t_date > v_date or v_date > d_date:
+                        logger.error("Date sequence is invalid: t_date <= v_date <= d_date must hold.")
+                        return False
+            else:
+                logger.error(f"TradeDetail has no attribute '{key}' to update.")
+                return False
+        return True
 
 
     

@@ -1,9 +1,27 @@
 from app.helper import mappings
 from app.services.validations import Validator
+from app.entities.trade_detail import Direction, InstrumentStyle, Currency, TradeDetail
+from datetime import date
 import pytest
 
 
 class TestValidator:
+    @pytest.fixture
+    def setup_detail(self):
+        return TradeDetail(
+            state_validator="DRAFT",
+            entity="EntityA",
+            counterparty="CounterpartyB",
+            direction=Direction.BUY,
+            style=InstrumentStyle.FORWARD,
+            notion_curr=Currency.DOLLAR,
+            notion_amount=10000.0,
+            underlying=[Currency.DOLLAR, Currency.EURO],
+            t_date=date.today(),
+            v_date=date.today(),
+            d_date=date.today(),
+        )
+
     @pytest.mark.parametrize(
         "invalid_param, mapping",
         [
@@ -80,4 +98,68 @@ class TestValidator:
             assert False, "Expected KeyError was not raised"
         except KeyError as e:
             assert str(e) == f"'Invalid direction: {direction_str}'"
+    
+    def test_validate_submit_trade_invalid_cancelled(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.CANCELLED: setup_detail
+        }
+            # mappings.state_str_to_enum["CANCELLED"]: None        }
+        trade_id = 1
+
+        is_valid = validator.validate_submit_trade(trades, trade_id)
+        assert not is_valid
+    
+    def validate_submit_trade_valid(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.DRAFT: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_submit_trade(trades, trade_id)
+        assert is_valid
+    
+    def test_validate_approve_trade_invalid_cancelled(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.CANCELLED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_approve_trade(trades, trade_id, user_id=123, request_id=1, state=mappings.State.CANCELLED)
+        assert not is_valid
+    
+    def test_validate_approve_trade_valid(self, setup_detail):
+        validator = Validator()
+        setup_detail.state_validator = "PENDING_APPROVAL"
+        trades = {
+            mappings.State.PENDING_APPROVE: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_approve_trade(trades, trade_id, user_id=123, request_id=1, state=mappings.State.PENDING_APPROVE)
+        assert is_valid
+    
+    def test_validate_cancel_trade_invalid_cancelled(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.CANCELLED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_cancel_trade(trades, trade_id, state=mappings.State.CANCELLED)
+        assert not is_valid
+    
+    def test_validate_cancel_trade_valid(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.DRAFT: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_cancel_trade(trades, trade_id, state=mappings.State.PENDING_APPROVE)
+        assert is_valid
+    
+
     

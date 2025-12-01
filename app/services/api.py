@@ -113,18 +113,98 @@ class TradeService:
             logger.error(f"Trade ID {trade_id} has no action log entries.")
             return False
         request_user_id = self.action_log.action_log[trade_id][0].user_id
-        valid, state_str = self.validator.validate_approve_trade(trades, trade_id, user_id, request_user_id)
+        latest_log = self.action_log.get_latest_log(trade_id)
+        if not latest_log:
+            logger.error(f"Trade ID {trade_id} has no latest action log entry.")
+            return False
+        state = latest_log.to_state
+        valid = self.validator.validate_approve_trade(trades, trade_id, user_id, request_user_id, state=state)
         if not valid:
             logger.error(f"Trade ID {trade_id} failed approval validation.")
             return False
-        if state_str is None:
-            logger.error(f"Trade ID {trade_id} has no valid state for approval.")
-            return False
-        state = mappings.state_str_to_enum[state_str]
         self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.APPROVE, from_state=state, note=note)
         trade = self.trade_history.store[trade_id][state]
         self.trade_history.add_trade(trade, State.APPROVED, trade_id=trade_id)
         logger.info(f"Trade ID {trade_id} approved by user {user_id}.")
+        return True
+    
+    def cancel_trade(self, trade_id: int, user_id: int, note: str) -> bool:
+        """
+        Cancel a trade that is pending approval.
+
+        Args:
+            trade_id: ID of the trade to cancel.
+            user_id: User cancelling the trade.
+            note: Optional cancellation note or comment.
+
+        Returns:
+            bool: True if cancellation succeeds, False otherwise.
+        """
+        if not trade_id in self.trade_history.store:
+            logger.error(f"Trade ID {trade_id} not found in trade history.")
+            return False
+        trades = self.trade_history.store[trade_id]
+        latest_log = self.action_log.get_latest_log(trade_id)
+        if not latest_log:
+            logger.error(f"Trade ID {trade_id} has no latest action log entry.")
+            return False
+        state = latest_log.to_state
+        valid = self.validator.validate_cancel_trade(trades, trade_id, state=state)
+        if not valid:
+            logger.error(f"Trade ID {trade_id} failed cancellation validation.")
+            return False
+        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.CANCEL, from_state=state, note=note)
+        trade = self.trade_history.store[trade_id][state]
+        self.trade_history.add_trade(trade, State.CANCELLED, trade_id=trade_id)
+        logger.info(f"Trade ID {trade_id} cancelled by user {user_id}.")
+        return True
+    
+    def update_trade(self, trade_id: int, user_id: int, note: str, **updates) -> bool:
+        """
+        Update a trade that is pending approval with new details. Validates updates dict and user permissions  before applying.
+
+        Args:
+            trade_id: ID of the trade to update.
+            user_id: User updating the trade.
+            note: Optional update note or comment.
+            updates: Key-value pairs of fields to update in the trade.
+
+        Returns:
+            bool: True if update succeeds, False otherwise.
+        """
+        if not trade_id in self.trade_history.store:
+            logger.error(f"Trade ID {trade_id} not found in trade history.")
+            return False
+        trades = self.trade_history.store[trade_id]
+        latest_log = self.action_log.get_latest_log(trade_id)
+        if not latest_log:
+            logger.error(f"Trade ID {trade_id} has no latest action log entry.")
+            return False
+        state = latest_log.to_state
+        request_user_id = self.action_log.action_log[trade_id][0].user_id
+        valid = self.validator.validate_update_trade(trades=trades, trade_id=trade_id, updates=updates, state=state, requester_id=request_user_id, user_id=user_id)
+        if not valid:
+            logger.error(f"Trade ID {trade_id} failed update validation.")
+            return False
+        trade = self.trade_history.store[trade_id][state]
+        copy_of_trade = TradeDetail(
+            state_validator=trade.state_validator,
+            entity=trade.entity,
+            counterparty=trade.counterparty,
+            direction=trade.direction,
+            style=trade.style,
+            notion_curr=trade.notion_curr,
+            notion_amount=trade.notion_amount,
+            underlying=trade.underlying,
+            t_date=trade.t_date,
+            v_date=trade.v_date,
+            d_date=trade.d_date,
+        )
+        for key, value in updates.items():
+            setattr(copy_of_trade, key, value)
+        self.trade_history.add_trade(copy_of_trade, State.NEEDS_REAPPROVAL, trade_id=trade_id)
+        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.UPDATE, from_state=state, note=note)
+        logger.info(f"Trade ID {trade_id} updated by user {user_id}.")
         return True
         
 
