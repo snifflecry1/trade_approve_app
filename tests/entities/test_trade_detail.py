@@ -27,6 +27,7 @@ class TestTradeDetail:
         return _make_detail
     
     def test_valid_trade_detail(self, detail_factory):
+        """Test that a valid trade detail can be created with all required fields."""
         detail = detail_factory()
         assert detail.state_validator == "DRAFT"
         assert detail.entity == "EntityA"
@@ -41,14 +42,17 @@ class TestTradeDetail:
         assert detail.d_date == date.today()
 
     def test_trade_detail_invalid_amount(self, detail_factory):
+        """Test that creating a trade detail with negative amount raises ValueError."""
         with pytest.raises(ValueError):
             detail_factory(notion_amount=-1)
     
     def test_trade_detail_strike_set_invalid_state(self, detail_factory):
+        """Test that setting strike price in non-executed state raises ValueError."""
         with pytest.raises(ValueError):
             detail_factory(strike=100.0, state_validator=State.DRAFT)
     
     def test_trade_detail_compare(self, detail_factory):
+        """Test that comparing two trade details returns correct field differences."""
         detail1 = detail_factory(notion_amount=10000.0)
         detail2 = detail_factory(notion_amount=15000.0)
         diffs = detail1.compare_trade(detail2)

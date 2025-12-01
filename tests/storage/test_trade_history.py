@@ -71,6 +71,7 @@ class TestTradeHistory:
         ],
     )
     def test_trade_detail_history_init(self, config, expected_store, expected_id):
+        """Test that trade history initializes correctly with or without config."""
         history = TradeDetailHistory(config=config)
         assert history.store == expected_store
         assert history.current_unused_id == expected_id
@@ -118,6 +119,7 @@ class TestTradeHistory:
     def test_add_trade_detail(
         self, initial_store, initial_id, trade_id, state, trade_detail, expected_store
     ):
+        """Test that adding trade details correctly updates the store."""
         config = ConfigMock(initial_store, initial_id)
         history = TradeDetailHistory(config=config)
 
@@ -126,11 +128,13 @@ class TestTradeHistory:
         assert history.store == expected_store
 
     def test_add_trade_details_failure_key_error(self):
+        """Test that adding trade with non-existent trade_id raises KeyError."""
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             history.add_trade(details=test_detail_one, state=State.DRAFT, trade_id=5)
 
     def test_get_trade_versions(self):
+        """Test that getting trade versions returns all states for a trade."""
         expected = {State.DRAFT: test_detail_one}
         config = ConfigMock({1: {State.DRAFT: test_detail_one}}, 2)
         history = TradeDetailHistory(config)
@@ -138,11 +142,13 @@ class TestTradeHistory:
         assert expected == versions
 
     def test_get_trade_versions_key_error(self):
+        """Test that getting versions for non-existent trade raises KeyError."""
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             versions = history.get_trade_versions(1)
     
     def test_get_trade_state_version(self):
+        """Test that getting trade details for specific state returns correct trade detail."""
         expected = test_detail_one
         config = ConfigMock({1: {State.DRAFT: test_detail_one}}, 2)
         history = TradeDetailHistory(config)
@@ -150,6 +156,7 @@ class TestTradeHistory:
         assert expected == version
     
     def test_get_trade_state_version_key_error(self):
+        """Test that getting state version for non-existent trade raises KeyError."""
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             version = history.get_trade_state_version(1, State.DRAFT)

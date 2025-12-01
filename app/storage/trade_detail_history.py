@@ -20,6 +20,7 @@ class TradeDetailHistory:
     
     # from here were assuming details have been validated
     def add_trade(self, details: TradeDetail, state: State, trade_id: Optional[int]=None) -> int:
+        """Add a new trade detail version to the store."""
         if not trade_id:
             version_init = {state:details}
             self.store[self.current_unused_id] = version_init
@@ -41,6 +42,7 @@ class TradeDetailHistory:
     
     # retrieve all versions for a trade id
     def get_trade_versions(self, trade_id:int) -> dict[State, TradeDetail]:
+        """Get all versions of a trade by trade ID."""
         try:
             versions = self.store[trade_id]
             return versions
@@ -51,6 +53,7 @@ class TradeDetailHistory:
     
     # for retrieving a specific version of a trade by state
     def get_trade_state_version(self, trade_id:int, state:State) -> TradeDetail:
+        """Get a specific version of a trade by trade ID and state."""
         try:
             version = self.store[trade_id][state]
             return version

@@ -1,0 +1,22 @@
+services:
+  cli:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: trade_approve_cli
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./app:/workspace/app
+      - ./tests:/workspace/tests
+    command: python -m app.main --interactive
+
+  test:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile
+    container_name: trade_approve_tests
+    volumes:
+      - ./app:/workspace/app
+      - ./tests:/workspace/tests
+    command: pytest -v

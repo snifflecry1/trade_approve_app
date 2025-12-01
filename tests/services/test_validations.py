@@ -31,6 +31,7 @@ class TestValidator:
         ],
     )
     def test_parse_enum_field_invalid_raises_value_error(self, invalid_param, mapping):
+        """Test that parsing an invalid enum field raises KeyError."""
         validator = Validator()
         invalid_direction = "UPWARDS"
         try:
@@ -52,6 +53,7 @@ class TestValidator:
         ],
     )    
     def test_parse_enum_field_valid(self, valid_param, mapping):
+        """Test that parsing a valid enum field returns the correct enum value."""
         validator = Validator()
         result = validator.parse_enum_field(
             "test",
@@ -61,6 +63,7 @@ class TestValidator:
         assert result == mapping[valid_param]
     
     def test_parse_draft_inputs_valid(self):
+        """Test that valid draft inputs are correctly parsed into enum types."""
         validator = Validator()
         direction_str = "BUY"
         style_str = "FORWARD"
@@ -82,6 +85,7 @@ class TestValidator:
         ]
 
     def test_parse_draft_inputs_invalid_raises_value_error(self):
+        """Test that invalid draft inputs raise KeyError."""
         validator = Validator()
         direction_str = "INVALID_DIRECTION"
         style_str = "FORWARD"
@@ -100,6 +104,7 @@ class TestValidator:
             assert str(e) == f"'Invalid direction: {direction_str}'"
     
     def test_validate_submit_trade_invalid_cancelled(self, setup_detail):
+        """Test that validating submission for a cancelled trade fails."""
         validator = Validator()
         trades = {
             mappings.State.CANCELLED: setup_detail
@@ -110,6 +115,7 @@ class TestValidator:
         assert not is_valid
     
     def validate_submit_trade_valid(self, setup_detail):
+        """Test that validating submission for a valid draft trade succeeds."""
         validator = Validator()
         trades = {
             mappings.State.DRAFT: setup_detail
@@ -120,6 +126,7 @@ class TestValidator:
         assert is_valid
     
     def test_validate_approve_trade_invalid_cancelled(self, setup_detail):
+        """Test that validating approval for a cancelled trade fails."""
         validator = Validator()
         trades = {
             mappings.State.CANCELLED: setup_detail
@@ -130,6 +137,7 @@ class TestValidator:
         assert not is_valid
     
     def test_validate_approve_trade_valid(self, setup_detail):
+        """Test that validating approval for a pending trade succeeds."""
         validator = Validator()
         setup_detail.state_validator = "PENDING_APPROVAL"
         trades = {
@@ -151,6 +159,7 @@ class TestValidator:
         assert not is_valid
     
     def test_validate_cancel_trade_valid(self, setup_detail):
+        """Test that validating cancellation for a valid state succeeds."""
         validator = Validator()
         trades = {
             mappings.State.DRAFT: setup_detail
@@ -161,6 +170,7 @@ class TestValidator:
         assert is_valid
     
     def test_validate_update_trade_invalid_state(self, setup_detail):
+        """Test that validating update for an approved trade fails."""
         validator = Validator()
         trades = {
             mappings.State.APPROVED: setup_detail
@@ -171,6 +181,7 @@ class TestValidator:
         assert not is_valid
     
     def test_validate_update_trade_valid(self, setup_detail):
+        """Test that validating update for a pending trade succeeds."""
         validator = Validator()
         trades = {
             mappings.State.PENDING_APPROVE: setup_detail
@@ -181,6 +192,7 @@ class TestValidator:
         assert is_valid
     
     def test_validate_send_to_counterparty_invalid_state(self, setup_detail):
+        """Test that validating send to counterparty for a draft trade fails."""
         validator = Validator()
         trades = {
             mappings.State.DRAFT: setup_detail
@@ -191,6 +203,7 @@ class TestValidator:
         assert not is_valid
     
     def test_validate_send_to_counterparty_valid(self, setup_detail):
+        """Test that validating send to counterparty for an approved trade succeeds."""
         validator = Validator()
         trades = {
             mappings.State.APPROVED: setup_detail
@@ -201,6 +214,7 @@ class TestValidator:
         assert is_valid
     
     def test_validate_book_trade_invalid_state(self, setup_detail):
+        """Test that validating booking for a non-executed trade fails."""
         validator = Validator()
         trades = {
             mappings.State.APPROVED: setup_detail
@@ -211,6 +225,7 @@ class TestValidator:
         assert not is_valid
     
     def test_validate_book_trade_valid(self, setup_detail):
+        """Test that validating booking for an executed trade succeeds."""
         validator = Validator()
         trades = {
             mappings.State.EXECUTED: setup_detail

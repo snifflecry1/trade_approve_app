@@ -1,5 +1,4 @@
 from app.entities.trade_detail import TradeDetail
-from app.entities.action_log_entry import State
 from typing import Optional
 import logging
 import random
@@ -25,9 +24,6 @@ class TradeExecutor:
         
         Returns:
             TradeDetail: Updated trade with strike price set.
-        
-        Raises:
-            ValueError: If trade already has a strike set or is not approved.
         """
         if trade.strike is not None:
             raise ValueError(f"Trade already has strike set: {trade.strike}")

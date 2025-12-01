@@ -15,7 +15,6 @@ class State(Enum):
     CANCELLED = "Cancelled"
 
 
-# May need to map these to actual api methods
 class Action(Enum):
     SUBMIT = "Submit"
     APPROVE = "Approve"

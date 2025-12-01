@@ -1,17 +1,6 @@
 from app.entities.action_log_entry import Action, State
 from app.entities.trade_detail import Currency, InstrumentStyle, Direction
 
-# lists available actions from a current state
-state_available_actions = {
-    State.DRAFT: (Action.SUBMIT),
-    State.PENDING_APPROVE: (Action.APPROVE, Action.CANCEL),
-    State.APPROVED: (Action.SENDTOEXECUTE, Action.CANCEL),
-    State.NEEDS_REAPPROVAL: (Action.APPROVE, Action.CANCEL),
-    State.SENT_COUNTERPARTY: (Action.BOOK, Action.CANCEL),
-    State.EXECUTED: (),
-    State.CANCELLED: (),
-}
-
 enum_to_state_str = {
     State.DRAFT: "DRAFT",
     State.PENDING_APPROVE: "PENDING_APPROVAL",
@@ -22,7 +11,6 @@ enum_to_state_str = {
     State.CANCELLED: "CANCELLED",
 }
 
-# shows what state an action transitions a trade to
 action_to_state = {
     Action.SUBMIT: State.PENDING_APPROVE,
     Action.APPROVE: State.APPROVED,

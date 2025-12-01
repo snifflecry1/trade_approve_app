@@ -7,6 +7,7 @@ class TestActionLog:
         return ActionLog()
     
     def test_initialization(self, action_log_instance):
+        """Test that action log initializes with empty dictionary."""
         assert action_log_instance.action_log == {}
 
     def test_get_logs_non_existent_trade(self, action_log_instance):
@@ -16,6 +17,7 @@ class TestActionLog:
         assert logs == []
 
     def test_record_multiple_trades_separate_logs(self, action_log_instance):
+        """Test that multiple trades maintain separate action logs."""
         trade_id_1 = 101
         trade_id_2 = 102
         user_id = 3
@@ -31,6 +33,7 @@ class TestActionLog:
         assert len(logs_t2) == 1
     
     def test_record_trade_correct_transition(self, action_log_instance):
+        """Test that recording a trade action creates correct state transition."""
         trade_id_1 = 1
         user_id = 3
         action_log_instance.record(trade_id_1, user_id, Action.SUBMIT, State.DRAFT, "T1 submitted")

@@ -4,8 +4,6 @@ from datetime import date
 from typing import Optional, List, Dict, Tuple, Any
 
 
-# Helper classes for a trade
-# Is this correct layout ?
 class InstrumentStyle(Enum):
     FORWARD = "Forward Contract"
 
@@ -44,7 +42,6 @@ class TradeDetail:
         if self.strike and self.state_validator != "EXECUTED":
             raise ValueError("Strike price can only be set for executed trades")
 
-    # implement for diff functionality
     def compare_trade(self, other_trade: 'TradeDetail') -> Dict[str, Tuple[Any, Any]]:
         differences = {}
         for field in self.__dataclass_fields__:

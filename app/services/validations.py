@@ -35,6 +35,7 @@ class Validator:
         mapping: Mapping[str, T],
 
     ) -> T:
+        """Parse and validate an enum field from a string value using a mapping."""
         ok, value = Validator.parse_from_mapping(raw_value, mapping, field_name)
         if not ok or value is None:
             raise KeyError(f"Invalid {field_name}: {raw_value}")
@@ -47,6 +48,7 @@ class Validator:
         notion_curr_str: str,
         underlying_strs: list[str],
     ) -> tuple[Direction, InstrumentStyle, Currency, List[Currency]]:
+        """Parse and validate all draft trade inputs into their respective enum types."""
         direction = self.parse_enum_field("direction", direction_str, mappings.direction_stubs)
         style = self.parse_enum_field("style", style_str, mappings.style_stubs)
         notional_currency = self.parse_enum_field("currency", notion_curr_str, mappings.currency_stubs)
@@ -58,8 +60,8 @@ class Validator:
 
         return direction, style, notional_currency, underlying_currencies
     
-    # deeper validation for submitting trade
     def validate_submit_trade(self, trades: Dict[State,TradeDetail], trade_id:int) -> bool:
+        """Validate that a draft trade meets all requirements for submission."""
         if len(trades) > 1:
             logger.error(f"Trade ID {trade_id} has multiple versions; cannot submit.")
             return False
@@ -82,6 +84,7 @@ class Validator:
         return True
     
     def validate_approve_trade(self, trades: Dict[State,TradeDetail], trade_id:int, user_id:int, request_id: int, state: State) -> bool:
+        """Validate that a trade can be approved by the specified user."""
         if state != State.PENDING_APPROVE and state != State.NEEDS_REAPPROVAL:
             logger.error(f"Trade ID {trade_id} is not in Pending Approval or Needs Reapproval state.")
             return False
@@ -99,12 +102,14 @@ class Validator:
         return True
     
     def validate_cancel_trade(self, trades: Dict[State,TradeDetail], trade_id:int, state: State) -> bool:
+        """Validate that a trade is in a valid state for cancellation."""
         if state == State.CANCELLED or state == State.EXECUTED or state == State.DRAFT:
             logger.error(f"Trade ID {trade_id} in invalid state to be cancelled.")
             return False
         return True
     
     def validate_update_trade(self, trades: Dict[State,TradeDetail], trade_id:int, requester_id:int, user_id:int, updates:dict, state: State) -> bool:
+        """Validate that a trade update request is valid and properly formatted."""
         if state != State.PENDING_APPROVE:
             logger.error(f"Trade ID {trade_id} is not in PENDING_APPROVE state and cannot be updated.")
             return False
@@ -144,6 +149,7 @@ class Validator:
         return True
     
     def validate_send_to_counterparty(self,  trade_id:int, state: State, requester_id: int, user_id: int) -> bool:
+        """Validate that a trade can be sent to counterparty for execution."""
         if state != State.APPROVED:
             logger.error(f"Trade ID {trade_id} is not in APPROVED state and cannot be sent to counterparty.")
             return False
@@ -153,6 +159,7 @@ class Validator:
         return True
     
     def validate_book_trade(self, trade_id:int, state: State, trades: Dict[State,TradeDetail]) -> bool:
+        """Validate that a trade has been executed and can be booked."""
         if state == State.SENT_COUNTERPARTY:
             if State.EXECUTED in trades:
                 logger.info(f"Trade ID {trade_id} is valid for booking.")

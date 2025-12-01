@@ -19,12 +19,16 @@ The Trade Approval System provides a comprehensive API for managing trade workfl
 ## Installation
 
 ```bash
-# Clone the repository
-git clone <repository-url>
 cd trade_approve_app
 
-# Install dependencies
-pip install -r app/requirements.txt
+# Build Docker containers
+docker-compose build
+
+# To run cli session
+docker compose run --rm cli
+
+# To run tests
+docker compose run --rm tests
 ```
 
 ## API Documentation
@@ -348,7 +352,7 @@ diffs = service.compare_trade_versions(
 This usage would be running from a python terminal, trades and logs would be stored in memory as defined in the spec for the case study
 Further down this README as an extra I set up a cli client tool where a user can interactively go through the trade process more visually
 On another note this api could easily be wrapped in gRPC and be portable across different client languages if we were to persist the action log and trade details for each trade on a database 
-(more on potential architecture in DESIGN.md)
+(more on potential architecture in DESIGN_NOTES.md)
 
 ### Scenario: Creating and Approving a Trade
 
@@ -467,7 +471,8 @@ The system includes a CLI for interactive usage:
 
 ### Interactive Mode
 ```bash
-python -m app.main --interactive
+# Run the interactive CLI in Docker
+docker-compose run --rm cli
 ```
 
 ### Single Commands
@@ -530,14 +535,17 @@ The system manages trades through the following states:
 ## Testing
 
 ```bash
-# Run all tests
-pytest
+# Run all tests in Docker
+docker-compose run --rm test
 
 # Run specific test file
-pytest tests/services/test_api.py
+docker-compose run --rm test pytest tests/services/test_api.py -v
 
-# Run with coverage
-pytest --cov=app
+# Run with verbose output
+docker-compose run --rm test pytest -v
+
+# Run with coverage report
+docker-compose run --rm test pytest --cov=app --cov-report=term-missing
 ```
 
 ---

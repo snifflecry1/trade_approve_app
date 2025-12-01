@@ -12,6 +12,7 @@ class ActionLog:
     def record(
         self, trade_id: int, user_id: int, action: Action, from_state: State, note: str
     ):
+        """Record a new action log entry for a trade."""
         entries = self.action_log.setdefault(trade_id, [])
         step = len(entries) + 1
         to_state = mappings.action_to_state[action]
@@ -28,9 +29,11 @@ class ActionLog:
         entries.append(entry)
 
     def get_latest_log(self, trade_id:int) -> Optional[ActionLogEntry]:
+        """Get the most recent action log entry for a trade."""
         logs = list(self.action_log.get(trade_id, []))
         return logs[-1] if logs else None
     
     def get_logs(self, trade_id: int) -> List[ActionLogEntry]:
+        """Get all action log entries for a trade."""
         return list(self.action_log.get(trade_id, []))
 
