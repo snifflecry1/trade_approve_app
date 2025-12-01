@@ -142,7 +142,23 @@ class Validator:
                 logger.error(f"TradeDetail has no attribute '{key}' to update.")
                 return False
         return True
-
+    
+    def validate_send_to_counterparty(self,  trade_id:int, state: State, requester_id: int, user_id: int) -> bool:
+        if state != State.APPROVED:
+            logger.error(f"Trade ID {trade_id} is not in APPROVED state and cannot be sent to counterparty.")
+            return False
+        if requester_id == user_id:
+            logger.error("Sender cannot be the same as the original requester.")
+            return False
+        return True
+    
+    def validate_book_trade(self, trade_id:int, state: State, trades: Dict[State,TradeDetail]) -> bool:
+        if state == State.SENT_COUNTERPARTY:
+            if State.EXECUTED in trades:
+                logger.info(f"Trade ID {trade_id} is valid for booking.")
+                return True
+        logger.error(f"Trade ID {trade_id} is not in SENT_COUNTERPARTY state and cannot be booked.")
+        return False
 
     
     

@@ -186,5 +186,87 @@ class TestTradeService:
         result = setup_service.update_trade(trade_id=trade_id, user_id=456, note="Updating trade", **updates)
         assert result is False
     
+    def test_send_trade_to_counterparty_valid(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        setup_service.approve_trade(trade_id=trade_id, user_id=456, note="Approving trade")
+        result = setup_service.sent_trade_to_counterparty(trade_id=trade_id, user_id=456, note="Sending to counterpary")
+        assert result is True
+        assert State.SENT_COUNTERPARTY in setup_service.trade_history.store[trade_id]
+        # Verify subsequence execution
+        assert State.EXECUTED in setup_service.trade_history.store[trade_id]
+        assert setup_service.trade_history.store[trade_id][State.EXECUTED].strike is not None
+    
+    def test_send_trade_to_counterparty_invalid_user(self, setup_service_with_trade):
+        setup_service_with_trade, trade_id = setup_service_with_trade
+        setup_service_with_trade.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        setup_service_with_trade.approve_trade(trade_id=trade_id, user_id=456, note="Approving trade")
+        result = setup_service_with_trade.sent_trade_to_counterparty(trade_id=trade_id, user_id=123, note="Sending to counterpary")
+        assert result is False
+    
+    def test_book_trade_valid(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        setup_service.approve_trade(trade_id=trade_id, user_id=456, note="Approving trade")
+        setup_service.sent_trade_to_counterparty(trade_id=trade_id, user_id=456, note="Sending to counterpary", strike=1.25)
+        log_entry = setup_service.action_log.get_latest_log(trade_id)
+        assert log_entry.to_state == State.SENT_COUNTERPARTY
+        result = setup_service.book_trade(trade_id=trade_id, user_id=123, note="Booking trade")
+        assert result is True
+        assert State.EXECUTED in setup_service.trade_history.store[trade_id]
+        log_entry = setup_service.action_log.get_latest_log(trade_id)
+        assert log_entry.to_state == State.EXECUTED
+    
+    def test_book_trade_invalid_state(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        setup_service.approve_trade(trade_id=trade_id, user_id=456, note="Approving trade")
+        result = setup_service.book_trade(trade_id=trade_id, user_id=123, note="Booking trade")
+        assert result is False
+    
+    def test_view_trades(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        trades = setup_service.view_trades()
+        assert "Trade_ID: 1 | Latest_State: PENDING_APPROVE |" in trades[0] 
+
+    
+    def test_view_action_log(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        logs = setup_service.view_action_log(trade_id=trade_id)
+        assert "Step: 1 | User_ID: 123 | Action: SUBMIT | From_State: DRAFT | To_State: PENDING_APPROVE |" in logs[0]
+    
+    def test_view_trade_states(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        states = setup_service.view_trade_states(trade_id=trade_id)
+        assert "DRAFT" in states[1]
+        assert "PENDING_APPROVAL" in states[2]
+    
+    def test_view_trade_version(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        trade_version = setup_service.view_trade_details(trade_id=trade_id, state=State.PENDING_APPROVE)
+        assert "Trade ID" in trade_version[0]
+        assert "State" in trade_version[1]
+    
+    def test_view_trade_state_diff(self, setup_service_with_trade):
+        setup_service, trade_id = setup_service_with_trade
+        setup_service.submit_trade_for_approval(trade_id=trade_id, user_id=123, note="Submitting for approval")
+        setup_service.approve_trade(trade_id=trade_id, user_id=456, note="Approving trade")
+        setup_service.sent_trade_to_counterparty(trade_id=trade_id, user_id=456, note="Sending to counterpary", strike=1.25)
+        setup_service.book_trade(trade_id=trade_id, user_id=123, note="Booking trade")
+        diffs = setup_service.compare_trade_versions(trade_id=trade_id, state1=State.DRAFT, state2=State.EXECUTED)
+        assert "strike" in diffs
+    
+
+
+        
+        
+
+
+
+    
         
         

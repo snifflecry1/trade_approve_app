@@ -11,14 +11,15 @@ state_available_actions = {
     State.EXECUTED: (),
     State.CANCELLED: (),
 }
-state_str_to_enum = {
-    "DRAFT": State.DRAFT,
-    "PENDING_APPROVAL": State.PENDING_APPROVE,
-    "NEEDS_REAPPROVAL": State.NEEDS_REAPPROVAL,
-    "APPROVED": State.APPROVED,
-    "SENT_COUNTERPARTY": State.SENT_COUNTERPARTY,
-    "EXECUTED": State.EXECUTED,
-    "CANCELLED": State.CANCELLED,
+
+enum_to_state_str = {
+    State.DRAFT: "DRAFT",
+    State.PENDING_APPROVE: "PENDING_APPROVAL",
+    State.NEEDS_REAPPROVAL: "NEEDS_REAPPROVAL",
+    State.APPROVED: "APPROVED",
+    State.SENT_COUNTERPARTY: "SENT_COUNTERPARTY",
+    State.EXECUTED: "EXECUTED",
+    State.CANCELLED: "CANCELLED",
 }
 
 # shows what state an action transitions a trade to

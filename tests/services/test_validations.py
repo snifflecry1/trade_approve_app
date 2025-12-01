@@ -104,7 +104,6 @@ class TestValidator:
         trades = {
             mappings.State.CANCELLED: setup_detail
         }
-            # mappings.state_str_to_enum["CANCELLED"]: None        }
         trade_id = 1
 
         is_valid = validator.validate_submit_trade(trades, trade_id)
@@ -159,6 +158,66 @@ class TestValidator:
         trade_id = 1
 
         is_valid = validator.validate_cancel_trade(trades, trade_id, state=mappings.State.PENDING_APPROVE)
+        assert is_valid
+    
+    def test_validate_update_trade_invalid_state(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.APPROVED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_update_trade(trades, trade_id, requester_id=1, user_id=2, updates={}, state=mappings.State.APPROVED)
+        assert not is_valid
+    
+    def test_validate_update_trade_valid(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.PENDING_APPROVE: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_update_trade(trades, trade_id, requester_id=1, user_id=2, updates={}, state=mappings.State.PENDING_APPROVE)
+        assert is_valid
+    
+    def test_validate_send_to_counterparty_invalid_state(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.DRAFT: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_send_to_counterparty(trade_id, state=mappings.State.DRAFT, requester_id=1, user_id=2)
+        assert not is_valid
+    
+    def test_validate_send_to_counterparty_valid(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.APPROVED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_send_to_counterparty(trade_id, state=mappings.State.APPROVED, requester_id=1, user_id=2)
+        assert is_valid
+    
+    def test_validate_book_trade_invalid_state(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.APPROVED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_book_trade(trade_id, state=mappings.State.APPROVED, trades=trades)
+        assert not is_valid
+    
+    def test_validate_book_trade_valid(self, setup_detail):
+        validator = Validator()
+        trades = {
+            mappings.State.EXECUTED: setup_detail
+        }
+        trade_id = 1
+
+        is_valid = validator.validate_book_trade(trade_id, state=mappings.State.SENT_COUNTERPARTY, trades=trades)
         assert is_valid
     
 
