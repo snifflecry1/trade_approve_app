@@ -30,9 +30,3 @@ I think a relational database would be a good fit to persist trades and action l
 
 ### gRPC
 A gRPC wrapper could be easily used to encapsulate the api specified in order for a client to consume this service be platform independent keeping in mind that data would need to be persisted as I've mentioned above.
-
-
-
-
-
-

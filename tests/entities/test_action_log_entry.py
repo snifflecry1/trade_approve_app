@@ -1,6 +1,9 @@
-import pytest
 from datetime import datetime
-from app.entities.action_log_entry import ActionLogEntry, Action, State
+
+import pytest
+
+from app.entities.action_log_entry import Action, ActionLogEntry, State
+
 
 class TestActionLogEntry:
     @pytest.fixture
@@ -18,6 +21,7 @@ class TestActionLogEntry:
             )
             base_kwargs.update(override)
             return ActionLogEntry(**base_kwargs)  # type: ignore
+
         return _make_log
 
     def test_valid_action_log_entry(self, log_factory):
@@ -31,39 +35,38 @@ class TestActionLogEntry:
         assert log_entry.to_state == State.PENDING_APPROVE
         assert isinstance(log_entry.timestamp, datetime)
         assert log_entry.note == "Initial submission"
-    
+
     def test_action_log_entry_invalid_action(self, log_factory):
         """Test that creating an action log entry with invalid action raises TypeError."""
         with pytest.raises(TypeError):
             log_factory(action="INVALID_ACTION")
-    
+
     def test_action_log_entry_invalid_from_state(self, log_factory):
         """Test that creating an action log entry with invalid from_state raises TypeError."""
         with pytest.raises(TypeError):
             log_factory(from_state="INVALID_STATE")
-    
+
     def test_action_log_entry_invalid_to_state(self, log_factory):
         """Test that creating an action log entry with invalid to_state raises TypeError."""
         with pytest.raises(TypeError):
             log_factory(to_state="INVALID_STATE")
-    
+
     def test_action_log_entry_invalid_timestamp(self, log_factory):
         """Test that creating an action log entry with invalid timestamp raises TypeError."""
         with pytest.raises(TypeError):
             log_factory(timestamp="2023-10-10 10:00:00")
-    
+
     def test_action_log_entry_invalid_step(self, log_factory):
         """Test that creating an action log entry with invalid step raises ValueError."""
         with pytest.raises(ValueError):
             log_factory(step=0)
-    
+
     def test_action_log_entry_invalid_note_type(self, log_factory):
         """Test that creating an action log entry with invalid note type raises TypeError."""
         with pytest.raises(TypeError):
             log_factory(note=12345)
-    
+
     def test_action_log_entry_invalid_user_id(self, log_factory):
         """Test that creating an action log entry with invalid user_id raises ValueError."""
         with pytest.raises(ValueError):
             log_factory(user_id=-1)
-    

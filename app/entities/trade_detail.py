@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from enum import Enum
 from datetime import date
-from typing import Optional, List, Dict, Tuple, Any
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class InstrumentStyle(Enum):
@@ -34,7 +34,7 @@ class TradeDetail:
     v_date: date
     d_date: date
     strike: Optional[float] = None
-    
+
     # Checking for valid notional amount and strike price
     def __post_init__(self):
         if self.notion_amount <= 1.00:
@@ -42,7 +42,7 @@ class TradeDetail:
         if self.strike and self.state_validator != "EXECUTED":
             raise ValueError("Strike price can only be set for executed trades")
 
-    def compare_trade(self, other_trade: 'TradeDetail') -> Dict[str, Tuple[Any, Any]]:
+    def compare_trade(self, other_trade: "TradeDetail") -> Dict[str, Tuple[Any, Any]]:
         differences = {}
         for field in self.__dataclass_fields__:
             if getattr(self, field) != getattr(other_trade, field):

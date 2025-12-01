@@ -1,5 +1,5 @@
 from app.entities.action_log_entry import Action, State
-from app.entities.trade_detail import Currency, InstrumentStyle, Direction
+from app.entities.trade_detail import Currency, Direction, InstrumentStyle
 
 enum_to_state_str = {
     State.DRAFT: "DRAFT",

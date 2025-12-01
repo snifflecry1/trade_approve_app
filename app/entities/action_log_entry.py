@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from app.entities.trade_detail import TradeDetail
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 from typing import Optional
+
+from app.entities.trade_detail import TradeDetail
 
 
 class State(Enum):
@@ -50,6 +51,3 @@ class ActionLogEntry:
             raise TypeError(f"Note must be a string, got: {type(self.note)}")
         if not isinstance(self.user_id, int) or self.user_id <= 0:
             raise ValueError(f"User ID must be a positive integer, got: {self.user_id}")
-        
-        
-

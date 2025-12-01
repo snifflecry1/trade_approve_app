@@ -1,31 +1,43 @@
 # Add config class here ?, how will it be used ?
 
-from app.entities.action_log_entry import ActionLogEntry
-from app.storage.action_log import ActionLog, State, Action
-from app.entities.trade_detail import TradeDetail
-from app.storage.trade_detail_history import TradeDetailHistory
-from app.entities.trade_detail import TradeDetail
-from app.services.validations import Validator
-from app.services.trade_executor import TradeExecutor
-from datetime import date, datetime
-from app.helper import mappings
-from typing import Optional
 import logging
+from datetime import date, datetime
+from typing import Optional
+
+from app.entities.action_log_entry import ActionLogEntry
+from app.entities.trade_detail import TradeDetail
+from app.helper import mappings
+from app.services.trade_executor import TradeExecutor
+from app.services.validations import Validator
+from app.storage.action_log import Action, ActionLog, State
+from app.storage.trade_detail_history import TradeDetailHistory
 
 logger = logging.getLogger()
 
+
 class TradeService:
-    def __init__(self, trade_history: TradeDetailHistory, action_log: ActionLog, validator=None):
+    def __init__(
+        self, trade_history: TradeDetailHistory, action_log: ActionLog, validator=None
+    ):
         self.trade_history = trade_history
         self.action_log = action_log
-        #self.config = config may need later
+        # self.config = config may need later
         self.validator = Validator()
         self.executor = TradeExecutor()
 
-    def save_draft(self, entity: str, counterparty: str, direction: str,
-                   style: str, notion_curr: str, notion_amount: float,
-                   underlying: list, t_date: date, v_date: date, d_date: date
-        ) -> int:
+    def save_draft(
+        self,
+        entity: str,
+        counterparty: str,
+        direction: str,
+        style: str,
+        notion_curr: str,
+        notion_amount: float,
+        underlying: list,
+        t_date: date,
+        v_date: date,
+        d_date: date,
+    ) -> int:
         """
         Save a trade draft with validation and audit logging.
 
@@ -45,22 +57,27 @@ class TradeService:
             int: Trade ID of the saved draft.
         """
         id = self.trade_history.current_unused_id
-        parsed_direction, parsed_style, parsed_curr, parsed_underlying = self.validator.parse_draft_inputs(direction_str=direction,
-            style_str=style,
-            notion_curr_str=notion_curr,
-            underlying_strs=underlying)
+        parsed_direction, parsed_style, parsed_curr, parsed_underlying = (
+            self.validator.parse_draft_inputs(
+                direction_str=direction,
+                style_str=style,
+                notion_curr_str=notion_curr,
+                underlying_strs=underlying,
+            )
+        )
         try:
             trade_detail = TradeDetail(
                 state_validator="DRAFT",
-                entity=entity, 
+                entity=entity,
                 counterparty=counterparty,
-                direction=parsed_direction, 
-                style=parsed_style,                                      
-                notion_curr=parsed_curr, 
+                direction=parsed_direction,
+                style=parsed_style,
+                notion_curr=parsed_curr,
                 notion_amount=notion_amount,
                 underlying=parsed_underlying,
                 t_date=t_date,
-                v_date=v_date, d_date=d_date
+                v_date=v_date,
+                d_date=d_date,
             )
             self.trade_history.add_trade(trade_detail, State.DRAFT)
             logger.info(f"Draft trade saved with ID {id}")
@@ -68,7 +85,6 @@ class TradeService:
             logger.error(f"Validation error while creating TradeDetail: {e}")
             return 0
         return id
-
 
     def submit_trade_for_approval(self, trade_id: int, user_id: int, note: str) -> bool:
         """
@@ -85,17 +101,25 @@ class TradeService:
         if not trade_id in self.trade_history.store:
             logger.error(f"Trade ID {trade_id} not found in trade history.")
             return False
-        valid = self.validator.validate_submit_trade(self.trade_history.store[trade_id], trade_id)
+        valid = self.validator.validate_submit_trade(
+            self.trade_history.store[trade_id], trade_id
+        )
         if not valid:
             logger.error(f"Trade ID {trade_id} failed submission validation.")
             return False
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.SUBMIT, from_state=State.DRAFT, note=note)
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.SUBMIT,
+            from_state=State.DRAFT,
+            note=note,
+        )
         trade = self.trade_history.store[trade_id][State.DRAFT]
         trade.state_validator = "PENDING_APPROVAL"
         self.trade_history.add_trade(trade, State.PENDING_APPROVE, trade_id=trade_id)
         logger.info(f"Trade ID {trade_id} submitted for approval by user {user_id}.")
         return True
-    
+
     def approve_trade(self, trade_id: int, user_id: int, note: str) -> bool:
         """
         Approve a trade that is pending approval. Validates who can approve based on user_id
@@ -121,16 +145,24 @@ class TradeService:
             logger.error(f"Trade ID {trade_id} has no latest action log entry.")
             return False
         state = latest_log.to_state
-        valid = self.validator.validate_approve_trade(trades, trade_id, user_id, request_user_id, state=state)
+        valid = self.validator.validate_approve_trade(
+            trades, trade_id, user_id, request_user_id, state=state
+        )
         if not valid:
             logger.error(f"Trade ID {trade_id} failed approval validation.")
             return False
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.APPROVE, from_state=state, note=note)
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.APPROVE,
+            from_state=state,
+            note=note,
+        )
         trade = self.trade_history.store[trade_id][state]
         self.trade_history.add_trade(trade, State.APPROVED, trade_id=trade_id)
         logger.info(f"Trade ID {trade_id} approved by user {user_id}.")
         return True
-    
+
     def cancel_trade(self, trade_id: int, user_id: int, note: str) -> bool:
         """
         Cancel a trade that is past submission. Validates if cancellation is allowed based on trade state.
@@ -156,12 +188,18 @@ class TradeService:
         if not valid:
             logger.error(f"Trade ID {trade_id} failed cancellation validation.")
             return False
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.CANCEL, from_state=state, note=note)
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.CANCEL,
+            from_state=state,
+            note=note,
+        )
         trade = self.trade_history.store[trade_id][state]
         self.trade_history.add_trade(trade, State.CANCELLED, trade_id=trade_id)
         logger.info(f"Trade ID {trade_id} cancelled by user {user_id}.")
         return True
-    
+
     def update_trade(self, trade_id: int, user_id: int, note: str, **updates) -> bool:
         """
         Update a trade that is pending approval with new details. Validates updates dict and user permissions  before applying.
@@ -185,7 +223,14 @@ class TradeService:
             return False
         state = latest_log.to_state
         request_user_id = self.action_log.action_log[trade_id][0].user_id
-        valid = self.validator.validate_update_trade(trades=trades, trade_id=trade_id, updates=updates, state=state, requester_id=request_user_id, user_id=user_id)
+        valid = self.validator.validate_update_trade(
+            trades=trades,
+            trade_id=trade_id,
+            updates=updates,
+            state=state,
+            requester_id=request_user_id,
+            user_id=user_id,
+        )
         if not valid:
             logger.error(f"Trade ID {trade_id} failed update validation.")
             return False
@@ -205,12 +250,22 @@ class TradeService:
         )
         for key, value in updates.items():
             setattr(copy_of_trade, key, value)
-        self.trade_history.add_trade(copy_of_trade, State.NEEDS_REAPPROVAL, trade_id=trade_id)
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.UPDATE, from_state=state, note=note)
+        self.trade_history.add_trade(
+            copy_of_trade, State.NEEDS_REAPPROVAL, trade_id=trade_id
+        )
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.UPDATE,
+            from_state=state,
+            note=note,
+        )
         logger.info(f"Trade ID {trade_id} updated by user {user_id}.")
         return True
-    
-    def sent_trade_to_counterparty(self, trade_id: int, user_id: int, note: str, strike: Optional[float] = None) -> bool:
+
+    def sent_trade_to_counterparty(
+        self, trade_id: int, user_id: int, note: str, strike: Optional[float] = None
+    ) -> bool:
         """
         Mark a trade as sent to counterparty. Validates user permissions and trade state before marking.
 
@@ -231,12 +286,20 @@ class TradeService:
             return False
         state = latest_log.to_state
         requester_id = self.action_log.action_log[trade_id][0].user_id
-        valid = self.validator.validate_send_to_counterparty(trade_id, state=state, requester_id=requester_id, user_id=user_id)
+        valid = self.validator.validate_send_to_counterparty(
+            trade_id, state=state, requester_id=requester_id, user_id=user_id
+        )
         if not valid:
             logger.error(f"Trade ID {trade_id} failed send to counterparty validation.")
             return False
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.SENDTOEXECUTE, from_state=state, note=note)
-        
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.SENDTOEXECUTE,
+            from_state=state,
+            note=note,
+        )
+
         trade = self.trade_history.store[trade_id][state]
         sent_trade = TradeDetail(
             state_validator=trade.state_validator,
@@ -249,18 +312,24 @@ class TradeService:
             underlying=trade.underlying,
             t_date=trade.t_date,
             v_date=trade.v_date,
-            d_date=trade.d_date
+            d_date=trade.d_date,
         )
-        self.trade_history.add_trade(sent_trade, State.SENT_COUNTERPARTY, trade_id=trade_id)
-        logger.info(f"Trade ID {trade_id} marked as sent to counterparty by user {user_id}.")
-        
+        self.trade_history.add_trade(
+            sent_trade, State.SENT_COUNTERPARTY, trade_id=trade_id
+        )
+        logger.info(
+            f"Trade ID {trade_id} marked as sent to counterparty by user {user_id}."
+        )
+
         try:
             executed_trade = self.executor.execute_trade(sent_trade, strike=strike)
         except ValueError as e:
             logger.error(f"Trade execution failed: {e}")
             return False
         self.trade_history.add_trade(executed_trade, State.EXECUTED, trade_id=trade_id)
-        logger.info(f"Trade ID {trade_id} executed with strike {executed_trade.strike}.")
+        logger.info(
+            f"Trade ID {trade_id} executed with strike {executed_trade.strike}."
+        )
         return True
 
     def book_trade(self, trade_id: int, user_id: int, note: str) -> bool:
@@ -271,10 +340,10 @@ class TradeService:
             trade_id: ID of the trade to book.
             user_id: User booking the trade.
             note: Optional booking note or comment.
-            
+
         Returns:
             bool: True if booking succeeds, False otherwise.
-        """ 
+        """
         if not trade_id in self.trade_history.store:
             logger.error(f"Trade ID {trade_id} not found in trade history.")
             return False
@@ -283,15 +352,23 @@ class TradeService:
             logger.error(f"Trade ID {trade_id} has no latest action log entry.")
             return False
         state = latest_log.to_state
-        valid = self.validator.validate_book_trade(trade_id, state=state, trades=self.trade_history.store[trade_id])
+        valid = self.validator.validate_book_trade(
+            trade_id, state=state, trades=self.trade_history.store[trade_id]
+        )
         if not valid:
             logger.error(f"Trade ID {trade_id} failed booking validation.")
             return False
-                
-        self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.BOOK, from_state=state, note=note)
+
+        self.action_log.record(
+            trade_id=trade_id,
+            user_id=user_id,
+            action=Action.BOOK,
+            from_state=state,
+            note=note,
+        )
         logger.info(f"Trade ID {trade_id} booked by user {user_id}.")
         return True
-    
+
     def view_trades(self):
         """
         Returns a pretty printed version of each trade in the action log using the format:
@@ -304,7 +381,7 @@ class TradeService:
             result.append(output_line)
             logger.info(output_line)
         return result
-    
+
     def view_action_log(self, trade_id: int):
         """
         Returns a pretty printed version of the action log for a specific trade using the format:
@@ -313,13 +390,15 @@ class TradeService:
         result = []
         logs = self.action_log.get_logs(trade_id)
         for log in logs:
-            output_line = (f"Step: {log.step} | User_ID: {log.user_id} | "
-                           f"Action: {log.action.name} | From_State: {log.from_state.name} | "
-                           f"To_State: {log.to_state.name} | Timestamp: {log.timestamp} | Note: {log.note}")
+            output_line = (
+                f"Step: {log.step} | User_ID: {log.user_id} | "
+                f"Action: {log.action.name} | From_State: {log.from_state.name} | "
+                f"To_State: {log.to_state.name} | Timestamp: {log.timestamp} | Note: {log.note}"
+            )
             result.append(output_line)
             logger.info(output_line)
         return result
-    
+
     def view_trade_states(self, trade_id: int):
         """
         Returns all states for a specific trade in the format:
@@ -336,7 +415,7 @@ class TradeService:
         except KeyError as e:
             logger.error(f"Trade ID {trade_id} not found: {e}")
             return []
-    
+
     def view_trade_details(self, trade_id: int, state: State):
         """
         Returns the details of a specific trade at a specific state.
@@ -356,13 +435,13 @@ class TradeService:
                 f"Trade Date: {trade_detail.t_date}",
                 f"Valuation Date: {trade_detail.v_date}",
                 f"Delivery Date: {trade_detail.d_date}",
-                f"Strike: {trade_detail.strike if trade_detail.strike is not None else 'None'}"
+                f"Strike: {trade_detail.strike if trade_detail.strike is not None else 'None'}",
             ]
             return output_lines
         except KeyError as e:
             logger.error(f"Trade ID {trade_id} with state {state.name} not found: {e}")
             return []
-    
+
     def compare_trade_versions(self, trade_id: int, state1: State, state2: State):
         """
         Compares two versions of a trade by their states and returns the differences.
@@ -389,15 +468,3 @@ class TradeService:
         except KeyError as e:
             logger.error(f"Trade ID {trade_id} with specified states not found: {e}")
             return {}
-        
-        
-
-    
-
-        
-
-        
-        
-    
-    
-

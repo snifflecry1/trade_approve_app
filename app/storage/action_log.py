@@ -1,7 +1,8 @@
-from app.entities.action_log_entry import Action, State, ActionLogEntry
-from app.helper import mappings
-from typing import List, Dict, Optional
 from datetime import datetime
+from typing import Dict, List, Optional
+
+from app.entities.action_log_entry import Action, ActionLogEntry, State
+from app.helper import mappings
 
 
 class ActionLog:
@@ -28,12 +29,11 @@ class ActionLog:
         )
         entries.append(entry)
 
-    def get_latest_log(self, trade_id:int) -> Optional[ActionLogEntry]:
+    def get_latest_log(self, trade_id: int) -> Optional[ActionLogEntry]:
         """Get the most recent action log entry for a trade."""
         logs = list(self.action_log.get(trade_id, []))
         return logs[-1] if logs else None
-    
+
     def get_logs(self, trade_id: int) -> List[ActionLogEntry]:
         """Get all action log entries for a trade."""
         return list(self.action_log.get(trade_id, []))
-

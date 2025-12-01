@@ -1,8 +1,11 @@
-import pytest
-from app.storage.trade_detail_history import TradeDetailHistory
-from app.entities.trade_detail import TradeDetail, Direction, InstrumentStyle, Currency
-from app.entities.action_log_entry import State
 from datetime import date
+
+import pytest
+
+from app.entities.action_log_entry import State
+from app.entities.trade_detail import (Currency, Direction, InstrumentStyle,
+                                       TradeDetail)
+from app.storage.trade_detail_history import TradeDetailHistory
 
 
 class ConfigMock:
@@ -146,7 +149,7 @@ class TestTradeHistory:
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             versions = history.get_trade_versions(1)
-    
+
     def test_get_trade_state_version(self):
         """Test that getting trade details for specific state returns correct trade detail."""
         expected = test_detail_one
@@ -154,10 +157,9 @@ class TestTradeHistory:
         history = TradeDetailHistory(config)
         version = history.get_trade_state_version(1, State.DRAFT)
         assert expected == version
-    
+
     def test_get_trade_state_version_key_error(self):
         """Test that getting state version for non-existent trade raises KeyError."""
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             version = history.get_trade_state_version(1, State.DRAFT)
-    
