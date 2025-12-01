@@ -10,7 +10,7 @@ class ActionLog:
         self.action_log: Dict[int, List[ActionLogEntry]] = {}
 
     def record(
-        self, trade_id: int, user_id: str, action: Action, from_state: State, note: str
+        self, trade_id: int, user_id: int, action: Action, from_state: State, note: str
     ):
         entries = self.action_log.setdefault(trade_id, [])
         step = len(entries) + 1

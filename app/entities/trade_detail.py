@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple, Any
 
 
 # Helper classes for a trade
@@ -11,9 +11,9 @@ class InstrumentStyle(Enum):
 
 
 class Currency(Enum):
-    EURO = "€"
-    POUND = "£"
-    DOLLAR = "$"
+    EURO = "EUR"
+    POUND = "GBP"
+    DOLLAR = "USD"
 
 
 class Direction(Enum):
@@ -24,7 +24,7 @@ class Direction(Enum):
 # strike is None by default until trade is booked
 @dataclass
 class TradeDetail:
-    trade_id: int
+    state_validator: str
     entity: str
     counterparty: str
     direction: Direction
@@ -36,9 +36,18 @@ class TradeDetail:
     v_date: date
     d_date: date
     strike: Optional[float] = None
-    # would it be worth storing the state of the trade here ?
-    # like some list that is at a specific index pointing to a specific state
-    # This seems outside of the specifics of this file representing trade data
+    
+    # Checking for valid notional amount and strike price
+    def __post_init__(self):
+        if self.notion_amount <= 1.00:
+            raise ValueError("Notional amount must be positive")
+        if self.strike and self.state_validator != "EXECUTED":
+            raise ValueError("Strike price can only be set for executed trades")
 
     # implement for diff functionality
-    # def compare_trade:
+    def compare_trade(self, other_trade: 'TradeDetail') -> Dict[str, Tuple[Any, Any]]:
+        differences = {}
+        for field in self.__dataclass_fields__:
+            if getattr(self, field) != getattr(other_trade, field):
+                differences[field] = (getattr(self, field), getattr(other_trade, field))
+        return differences

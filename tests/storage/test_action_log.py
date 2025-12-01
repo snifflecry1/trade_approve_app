@@ -18,7 +18,7 @@ class TestActionLog:
     def test_record_multiple_trades_separate_logs(self, action_log_instance):
         trade_id_1 = 101
         trade_id_2 = 102
-        user_id = "manager"
+        user_id = 3
 
         action_log_instance.record(trade_id_1, user_id, Action.SUBMIT, State.DRAFT, "T1 submitted")
         action_log_instance.record(trade_id_2, user_id, Action.SUBMIT, State.DRAFT, "T2 submitted")
@@ -32,7 +32,7 @@ class TestActionLog:
     
     def test_record_trade_correct_transition(self, action_log_instance):
         trade_id_1 = 1
-        user_id = "manager"
+        user_id = 3
         action_log_instance.record(trade_id_1, user_id, Action.SUBMIT, State.DRAFT, "T1 submitted")
         logs_t1 = action_log_instance.get_logs(trade_id_1)
         assert len(logs_t1) == 1

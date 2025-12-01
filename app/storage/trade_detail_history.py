@@ -39,10 +39,21 @@ class TradeDetailHistory:
                 logger.error(f"error: {e}")
                 return 0
     
+    # retrieve all versions for a trade id
     def get_trade_versions(self, trade_id:int) -> dict[State, TradeDetail]:
         try:
             versions = self.store[trade_id]
             return versions
+        except KeyError as e:
+            logger.error(f"missing key: {e.args[0]}, current keys :{list(self.store.keys())}")
+            #may need to revise this 
+            raise KeyError(f"missing key: {e.args[0]}, current keys :{list(self.store.keys())}")
+    
+    # for retrieving a specific version of a trade by state
+    def get_trade_state_version(self, trade_id:int, state:State) -> TradeDetail:
+        try:
+            version = self.store[trade_id][state]
+            return version
         except KeyError as e:
             logger.error(f"missing key: {e.args[0]}, current keys :{list(self.store.keys())}")
             #may need to revise this 

@@ -22,20 +22,20 @@ class ConfigMock:
 #     }
 test_t_date = test_v_date = test_d_date = date.today()
 test_detail_one = TradeDetail(
-    1,
-    "test_entity",
-    "test_counter",
-    Direction.BUY,
-    InstrumentStyle.FORWARD,
-    Currency.EURO,
-    5000.00,
-    [Currency.EURO, Currency.DOLLAR],
-    test_t_date,
-    test_v_date,
-    test_d_date,
+    state_validator="DRAFT",
+    entity="test_entity",
+    counterparty="test_counter",
+    direction=Direction.BUY,
+    style=InstrumentStyle.FORWARD,
+    notion_curr=Currency.EURO,
+    notion_amount=5000.00,
+    underlying=[Currency.EURO, Currency.DOLLAR],
+    t_date=test_t_date,
+    v_date=test_v_date,
+    d_date=test_d_date,
 )
 test_detail_two = TradeDetail(
-    1,
+    "NEEDS_REAPPROVAL",
     "test_entity",
     "test_counter",
     Direction.SELL,
@@ -48,7 +48,7 @@ test_detail_two = TradeDetail(
     test_d_date,
 )
 test_detail_three = TradeDetail(
-    2,
+    "EXECUTED",
     "test_entity",
     "test_counter",
     Direction.BUY,
@@ -141,3 +141,16 @@ class TestTradeHistory:
         history = TradeDetailHistory()
         with pytest.raises(KeyError):
             versions = history.get_trade_versions(1)
+    
+    def test_get_trade_state_version(self):
+        expected = test_detail_one
+        config = ConfigMock({1: {State.DRAFT: test_detail_one}}, 2)
+        history = TradeDetailHistory(config)
+        version = history.get_trade_state_version(1, State.DRAFT)
+        assert expected == version
+    
+    def test_get_trade_state_version_key_error(self):
+        history = TradeDetailHistory()
+        with pytest.raises(KeyError):
+            version = history.get_trade_state_version(1, State.DRAFT)
+    
