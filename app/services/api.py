@@ -206,6 +206,8 @@ class TradeService:
         self.action_log.record(trade_id=trade_id, user_id=user_id, action=Action.UPDATE, from_state=state, note=note)
         logger.info(f"Trade ID {trade_id} updated by user {user_id}.")
         return True
+    
+    
         
 
         
