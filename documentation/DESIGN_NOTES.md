@@ -11,11 +11,21 @@ Here are some points I'd like to outline for this case study in terms of:
 
 
 ## Code Design
+
+The high level designs follows a simple model.
+
+![Components Diagram](images/Components.PNG)
+- 1. Client Consumes TradeService api (cli client in my case)
+- 2. TradeService validates inputs with validator
+- 3. Validator returns a response whether valid
+- 4. TradeService updates memory
+- 5. TradeService returns a response to the client
+
 All storage for both trade details and action logs are stored in memory and are wiped between container builds (although we could persist state by adding a bind mount to local machine memory potentially). I used docker to abstract the inconvenience of setting up your own environment when cloning the repo.
 
 I used a dictionary to store both trade_details per trade and a list of action logs per trade, e.g., trade with id of 1 would give a dictionary where each key is a state of that trade and its value being a trade detail. Trade with id of 1 would give a list with each element being an action log that was recorded as a trade goes through its states. The CLI tool's view_trades can see the latest step of each trade that has been at least submitted.
 
-![Trade Diagram](TradeDiagram.PNG)
+![Trade Diagram](images/TradeDiagram.PNG)
 
 ## Use of AI
 As this was outlined in the requirements I can safely say that for coding the library api and deeper classes, all logic was planned by me but I did use chatgpt to see a general skeleton of how a class might look as a guide. The cli tool in main.py I initially started coding myself using argparse as I've used this before but I did use chatgpt to fill the details of some of the parsers to accommodate the range of api methods available.
